@@ -15,6 +15,9 @@ public @interface Authors {
     String MBECHLER = "mbechler";
     String JACKOFMOSTTRADES = "JackOfMostTrades";
     String MATTHIASKAISER = "matthias_kaiser";
+
+    String RACERZ = "racerz";
+
     String GEBL = "gebl" ;
     String JACOBAINES = "jacob-baines";
     String JASINNER = "jasinner";

